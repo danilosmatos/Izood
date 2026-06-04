@@ -18,6 +18,9 @@ class Player:
         if tilemap.is_walkable(new_row, new_col):
             self.row = new_row
             self.col = new_col
+            return True
+
+        return False
 
     def draw(self, screen):
         rect = pygame.Rect(
