@@ -15,6 +15,7 @@ from game.player import Player
 from game.coleta import SistemaColeta
 from game.entrega import SistemaEntrega
 from game.passos import ContadorDePassosJogo
+from game.tsp import calcular_rota_entregas
 
 
 CITY_MAP = [
@@ -70,6 +71,8 @@ class Game:
 
         self.mensagem = "Pegue os pedidos no restaurante."
         self.vitoria = False
+        self.rota_otima = None
+        self.info_rota = ""
 
     def criar_clientes(self):
         clientes = []
@@ -118,7 +121,7 @@ class Game:
                     self.mover_jogador(0, 1)
 
                 elif event.key == pygame.K_r:
-                    print("Antônio")
+                    self.calcular_melhor_rota()
 
                 elif event.key == pygame.K_i:
                     print("Eudes")
@@ -186,6 +189,26 @@ class Game:
     def todos_clientes_entregues(self):
         return all(cliente["entregue"] for cliente in self.clientes)
 
+    def calcular_melhor_rota(self):
+        clientes_posicoes = {
+            cliente["id"]: cliente["posicao"] for cliente in self.clientes
+        }
+
+        resultado = calcular_rota_entregas(
+            self.tilemap,
+            self.tilemap.restaurant_position,
+            clientes_posicoes,
+        )
+
+        self.rota_otima = resultado["caminho"]
+        ordem = " -> ".join(resultado["ordem_clientes"])
+        self.info_rota = (
+            f"R -> {ordem} -> R ({resultado['passos_totais']} passos)"
+        )
+        self.mensagem = "Rota ótima calculada. Pressione R novamente para atualizar."
+
+        print(self.info_rota)
+
     def entregas_feitas(self):
         return sum(1 for cliente in self.clientes if cliente["entregue"])
 
@@ -193,6 +216,7 @@ class Game:
         self.screen.fill((20, 20, 20))
 
         self.tilemap.draw(self.screen)
+        self.desenhar_rota_otima()
         self.desenhar_status_clientes()
         self.player.draw(self.screen)
         self.draw_hud()
@@ -201,6 +225,17 @@ class Game:
             self.draw_victory_message()
 
         pygame.display.flip()
+
+    def desenhar_rota_otima(self):
+        if not self.rota_otima:
+            return
+
+        for row, col in self.rota_otima:
+            centro = (
+                col * TILE_SIZE + TILE_SIZE // 2,
+                row * TILE_SIZE + TILE_SIZE // 2,
+            )
+            pygame.draw.circle(self.screen, (255, 120, 40), centro, 6)
 
     def desenhar_status_clientes(self):
         for cliente in self.clientes:
@@ -260,6 +295,17 @@ class Game:
         self.screen.blit(mensagem_texto, (hud_x, 190))
 
         self.coleta.desenhar_inventario(self.screen, hud_x, 230)
+
+        if self.info_rota:
+            rota_titulo = self.font.render("Rota ótima:", True, (255, 255, 255))
+            self.screen.blit(rota_titulo, (hud_x, 320))
+
+            rota_texto = self.small_font.render(
+                self.info_rota,
+                True,
+                (255, 180, 80),
+            )
+            self.screen.blit(rota_texto, (hud_x, 345))
 
         controls = [
             "WASD/Setas: mover",
