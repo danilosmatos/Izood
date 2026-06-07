@@ -205,7 +205,7 @@ class Game:
         self.info_rota = (
             f"R -> {ordem} -> R ({resultado['passos_totais']} passos)"
         )
-        self.mensagem = "Rota ótima calculada. Pressione R novamente para atualizar."
+        self.mensagem = "Rota calculada. Pressione R para atualizar."
 
         print(self.info_rota)
 
